@@ -16,7 +16,7 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ModelImporter modelImporter;
 
-    private readonly Dictionary<DiceFaces, Dictionary<int, double[]>> diceModelFaceRotations;
+    private readonly Dictionary<int, double[]>[] faceRotations;
 
     private readonly string[] diceModels =
     [
@@ -31,7 +31,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private readonly int[] diceFacesNumbers = [5, 7, 9, 11, 13, 21, 101];
 
-    private readonly Dictionary<int, double[]> d4FaceRotationsDictionary = new()
+    private readonly Dictionary<int, double[]> d4FaceRotations = new()
     {
         { 1, [-60, 95, 15] },
         { 2, [-5, -20, 60] },
@@ -39,7 +39,7 @@ public partial class MainWindowViewModel : ObservableObject
         { 4, [60, 25, -10] }
     };
 
-    private readonly Dictionary<int, double[]> d6FaceRotationsDictionary = new()
+    private readonly Dictionary<int, double[]> d6FaceRotations = new()
     {
         { 1, [35, 210, 0] },
         { 2, [-240, 170, -70] },
@@ -49,7 +49,7 @@ public partial class MainWindowViewModel : ObservableObject
         { 6, [-30, -20, -90] }
     };
 
-    private readonly Dictionary<int, double[]> d8FaceRotationsDictionary = new()
+    private readonly Dictionary<int, double[]> d8FaceRotations = new()
     {
         { 1, [20, -15, -15] },
         { 2, [165, 168, -15] },
@@ -61,7 +61,7 @@ public partial class MainWindowViewModel : ObservableObject
         { 8, [200, 75, 0] }
     };
 
-    private readonly Dictionary<int, double[]> d10FaceRotationsDictionary = new()
+    private readonly Dictionary<int, double[]> d10FaceRotations = new()
     {
         { 0, [0, -175, 0] },
         { 1, [180, 165, 0] },
@@ -76,7 +76,7 @@ public partial class MainWindowViewModel : ObservableObject
         { 10, [0, -175, 0] },
     };
 
-    private readonly Dictionary<int, double[]> d12FaceRotationsDictionary = new()
+    private readonly Dictionary<int, double[]> d12FaceRotations = new()
     {
         { 1, [111, -165, 134] },
         { 2, [-159, -167, -157] },
@@ -92,7 +92,7 @@ public partial class MainWindowViewModel : ObservableObject
         { 12, [179, 52, 88.5] },
     };
 
-    private readonly Dictionary<int, double[]> d20FaceRotationsDictionary = new()
+    private readonly Dictionary<int, double[]> d20FaceRotations = new()
     {
         { 1, [84, 38.5, 36] },
         { 2, [55.5, 160, 78] },
@@ -116,7 +116,7 @@ public partial class MainWindowViewModel : ObservableObject
         { 20, [232.5, 16, -28.5] },
     };
 
-    private readonly Dictionary<int, double[]> d100FaceRotationsDictionary = new()
+    private readonly Dictionary<int, double[]> d100FaceRotations = new()
     {
         { 0, [180, 110, 0] },
         { 1, [0, -50, 0] },
@@ -211,7 +211,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         const int Variability = 10;
         int i = RollResult % 10;
-        double[] orientations = diceModelFaceRotations[DiceFaces.D10][i];
+        double[] orientations = faceRotations[(int)DiceFaces.D10][i];
 
         Storyboard storyboard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
         AnimateDice(orientations, Variability, storyboard);
@@ -221,7 +221,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         const int Variability = 10;
         int i = RollResult / 10;
-        double[] orientations = diceModelFaceRotations[DiceFaces.D100][i];
+        double[] orientations = faceRotations[(int)DiceFaces.D100][i];
 
         Storyboard storyboard = (Storyboard)Application.Current.MainWindow.FindResource("D100DiceRollStoryboard");
         AnimateDice(orientations, Variability, storyboard);
@@ -231,14 +231,14 @@ public partial class MainWindowViewModel : ObservableObject
     {
         RollResult = Random.Shared.Next(1, diceFacesNumbers[(int)SelectedDice]);
 
-        double[] orientations = diceModelFaceRotations[SelectedDice][RollResult];
+        double[] orientations = faceRotations[(int)SelectedDice][RollResult];
         int Variability = SelectedDice == DiceFaces.D6 ? 20 : 10;
 
         Storyboard storyBoard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
         AnimateDice(orientations, Variability, storyBoard);
     }
 
-    private static void AnimateDice(double[] orientations, double orientationVariability, Storyboard storyBoard)
+    private static void AnimateDice(double[] orientations, double variability, Storyboard storyBoard)
     {
         for (int i = 0; i <= 3; i++)
         {
@@ -246,7 +246,7 @@ public partial class MainWindowViewModel : ObservableObject
             if (i < 3)
             {
                 rotation.From = Random.Shared.Next(-720, -360);
-                rotation.To = orientations[i] + ((Random.Shared.NextDouble() - 0.5D) * orientationVariability);
+                rotation.To = orientations[i] + ((Random.Shared.NextDouble() - 0.5D) * variability);
             }
             rotation.Duration = new Duration(TimeSpan.FromSeconds(1).Add(TimeSpan.FromSeconds(Random.Shared.NextDouble() * 0.75)));
         }
@@ -260,15 +260,6 @@ public partial class MainWindowViewModel : ObservableObject
         modelImporter = new ModelImporter();
         diceTypes = new([.. Enum.GetValues<DiceFaces>().Where(x => x >= 0)]);
         SelectedDice = DiceFaces.D4;
-        diceModelFaceRotations = new()
-        {
-            {DiceFaces.D4, d4FaceRotationsDictionary },
-            {DiceFaces.D6, d6FaceRotationsDictionary },
-            {DiceFaces.D8, d8FaceRotationsDictionary },
-            {DiceFaces.D10, d10FaceRotationsDictionary },
-            {DiceFaces.D12, d12FaceRotationsDictionary },
-            {DiceFaces.D20, d20FaceRotationsDictionary },
-            {DiceFaces.D100, d100FaceRotationsDictionary },
-        };
+        faceRotations = [d4FaceRotations, d6FaceRotations, d8FaceRotations, d10FaceRotations, d12FaceRotations, d20FaceRotations, d100FaceRotations];
     }
 }
