@@ -1,7 +1,7 @@
 ﻿namespace Rayfer.DiceRoller.WPF;
 public enum DiceFaces
 {
-    NotDefined = 0,
+    NotDefined = -1,
     D4,
     D6,
     D8,

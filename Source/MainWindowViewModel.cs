@@ -14,29 +14,20 @@ namespace Rayfer.DiceRoller.WPF;
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ModelImporter modelImporter;
-    private readonly Dictionary<DiceFaces, Dictionary<int, double[]>> diceModelFaceRotationsDictionary;
+    private readonly Dictionary<DiceFaces, Dictionary<int, double[]>> diceModelFaceRotations;
 
-    private readonly Dictionary<DiceFaces, string> diceModelDictionary = new()
-    {
-        { DiceFaces.D4, "Resources\\D4.obj" },
-        { DiceFaces.D6, "Resources\\D6.obj" },
-        { DiceFaces.D8, "Resources\\D8.obj" },
-        { DiceFaces.D10, "Resources\\D10.obj" },
-        { DiceFaces.D12, "Resources\\D12.obj" },
-        { DiceFaces.D20, "Resources\\D20.obj" },
-        { DiceFaces.D100, "Resources\\D100.obj" },
-    };
+    private readonly string[] diceModels =
+    [
+        "Resources\\D4.obj",
+        "Resources\\D6.obj",
+        "Resources\\D8.obj",
+        "Resources\\D10.obj",
+        "Resources\\D12.obj",
+        "Resources\\D20.obj",
+        "Resources\\D100.obj",
+    ];
 
-    private readonly Dictionary<DiceFaces, int> diceFacesNumberDictionary = new()
-    {
-        { DiceFaces.D4, 5 },
-        { DiceFaces.D6, 7 },
-        { DiceFaces.D8, 9 },
-        { DiceFaces.D10, 11 },
-        { DiceFaces.D12, 13 },
-        { DiceFaces.D20, 21 },
-        { DiceFaces.D100, 101 },
-    };
+    private readonly int[] diceFacesNumbers = [5, 7, 9, 11, 13, 21, 101];
 
     private readonly Dictionary<int, double[]> d4FaceRotationsDictionary = new()
     {
@@ -137,17 +128,6 @@ public partial class MainWindowViewModel : ObservableObject
         { 9, [0, 23, 0] },
     };
 
-    private readonly Dictionary<DiceFaces, double> diceAngleVariability = new()
-    {
-        { DiceFaces.D4, 10 },
-        { DiceFaces.D6, 20 },
-        { DiceFaces.D8, 10 },
-        { DiceFaces.D10, 10 },
-        { DiceFaces.D12, 10 },
-        { DiceFaces.D20, 10 },
-        { DiceFaces.D100, 10 },
-    };
-
     [ObservableProperty]
     private double angleX;
 
@@ -170,8 +150,8 @@ public partial class MainWindowViewModel : ObservableObject
     private int rollResult;
 
     public Model3D DiceModel => SelectedDice is DiceFaces.D100
-                ? modelImporter.Load(diceModelDictionary[DiceFaces.D10])
-                : (Model3D)modelImporter.Load(diceModelDictionary[SelectedDice]);
+                ? modelImporter.Load(diceModels[(int)DiceFaces.D10])
+                : (Model3D)modelImporter.Load(diceModels[(int)SelectedDice]);
 
     public double OffsetX => SelectedDice is DiceFaces.D100 ? 1 : 0;
     public double OffsetZ => SelectedDice is DiceFaces.D100 ? -0.5 : 0;
@@ -179,7 +159,7 @@ public partial class MainWindowViewModel : ObservableObject
     public double D100OffsetX => SelectedDice is DiceFaces.D100 ? 0.5 : 0;
     public double D100OffsetZ => SelectedDice is DiceFaces.D100 ? -0.5 : 0;
 
-    public Model3D? DiceModelD100 => SelectedDice is not DiceFaces.D100 ? null : (Model3D)modelImporter.Load(diceModelDictionary[SelectedDice]);
+    public Model3D? DiceModelD100 => SelectedDice is not DiceFaces.D100 ? null : (Model3D)modelImporter.Load(diceModels[(int)SelectedDice]);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiceModel))]
@@ -201,28 +181,27 @@ public partial class MainWindowViewModel : ObservableObject
             RollResult = Random.Shared.Next(0, 100);
 
             var unitsRolledNumber = RollResult % 10;
-            var d10FaceOrientation = diceModelFaceRotationsDictionary[DiceFaces.D10][unitsRolledNumber];
-            var d10OrientationVariability = diceAngleVariability[DiceFaces.D10];
+            var d10FaceOrientation = diceModelFaceRotations[DiceFaces.D10][unitsRolledNumber];
+            const int Variability = 10;
 
             var tensRolledNumber = RollResult / 10;
-            var d100FaceOrientation = diceModelFaceRotationsDictionary[DiceFaces.D100][tensRolledNumber];
-            var d100OrientationVariability = diceAngleVariability[DiceFaces.D100];
+            var d100FaceOrientation = diceModelFaceRotations[DiceFaces.D100][tensRolledNumber];
 
             var diceRollStoryboard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
-            AnimateDice(d10FaceOrientation, d10OrientationVariability, diceRollStoryboard);
+            AnimateDice(d10FaceOrientation, Variability, diceRollStoryboard);
 
             var d100DiceRollStoryboard = (Storyboard)Application.Current.MainWindow.FindResource("D100DiceRollStoryboard");
-            AnimateDice(d100FaceOrientation, d100OrientationVariability, d100DiceRollStoryboard);
+            AnimateDice(d100FaceOrientation, Variability, d100DiceRollStoryboard);
         }
         else
         {
-            RollResult = Random.Shared.Next(1, diceFacesNumberDictionary[SelectedDice]);
+            RollResult = Random.Shared.Next(1, diceFacesNumbers[(int)SelectedDice]);
 
-            var diceFaceOrientation = diceModelFaceRotationsDictionary[SelectedDice][RollResult];
-            var diceOrientationVariability = diceAngleVariability[SelectedDice];
+            var diceFaceOrientation = diceModelFaceRotations[SelectedDice][RollResult];
+            var Variability = SelectedDice == DiceFaces.D6 ? 20 : 10;
 
             var diceRollStoryboard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
-            AnimateDice(diceFaceOrientation, diceOrientationVariability, diceRollStoryboard);
+            AnimateDice(diceFaceOrientation, Variability, diceRollStoryboard);
         }
     }
 
@@ -243,13 +222,13 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void MoveXAngle(MouseWheelEventArgs mouseWheelMovement) => AngleX += mouseWheelMovement.Delta > 0 ? 0.5 : -0.5;
+    private void MoveXAngle(MouseWheelEventArgs mouseWheelMovement) => AngleX += Math.Sign(mouseWheelMovement.Delta) * 0.5;
 
     [RelayCommand]
-    private void MoveYAngle(MouseWheelEventArgs mouseWheelMovement) => AngleY += mouseWheelMovement.Delta > 0 ? 0.5 : -0.5;
+    private void MoveYAngle(MouseWheelEventArgs mouseWheelMovement) => AngleY += Math.Sign(mouseWheelMovement.Delta) * 0.5;
 
     [RelayCommand]
-    private void MoveZAngle(MouseWheelEventArgs mouseWheelMovement) => AngleZ += mouseWheelMovement.Delta > 0 ? 0.5 : -0.5;
+    private void MoveZAngle(MouseWheelEventArgs mouseWheelMovement) => AngleZ += Math.Sign(mouseWheelMovement.Delta) * 0.5;
 
     public MainWindowViewModel()
     {
@@ -265,7 +244,7 @@ public partial class MainWindowViewModel : ObservableObject
             DiceFaces.D100
         ];
         SelectedDice = DiceFaces.D4;
-        diceModelFaceRotationsDictionary = new()
+        diceModelFaceRotations = new()
         {
             {DiceFaces.D4, d4FaceRotationsDictionary },
             {DiceFaces.D6, d6FaceRotationsDictionary },
