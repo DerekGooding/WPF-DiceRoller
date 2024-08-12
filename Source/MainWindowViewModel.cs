@@ -34,6 +34,7 @@ public partial class MainWindowViewModel : ObservableObject
         "Resources\\D100.obj",
     ];
 
+    #region This should all be calculated, not hard coded
     private readonly int[] diceFacesNumbers = [5, 7, 9, 11, 13, 21, 101];
 
     private readonly Dictionary<int, double[]> d4FaceRotations = new()
@@ -134,6 +135,7 @@ public partial class MainWindowViewModel : ObservableObject
         { 8, [180, 180, 0] },
         { 9, [0, 23, 0] },
     };
+    #endregion
 
     [ObservableProperty]
     private double angleX;
