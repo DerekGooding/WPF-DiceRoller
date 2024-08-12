@@ -14,6 +14,14 @@ namespace Rayfer.DiceRoller.WPF;
 
 public partial class MainWindowViewModel : ObservableObject
 {
+    public MainWindowViewModel()
+    {
+        modelImporter = new ModelImporter();
+        diceTypes = new([.. Enum.GetValues<DiceFaces>().Where(x => x >= 0)]);
+        SelectedDice = DiceFaces.D4;
+        faceRotations = [d4FaceRotations, d6FaceRotations, d8FaceRotations, d10FaceRotations, d12FaceRotations, d20FaceRotations, d100FaceRotations];
+    }
+
     private readonly ModelImporter modelImporter;
 
     private readonly Dictionary<int, double[]>[] faceRotations;
@@ -255,11 +263,5 @@ public partial class MainWindowViewModel : ObservableObject
     }
     #endregion
 
-    public MainWindowViewModel()
-    {
-        modelImporter = new ModelImporter();
-        diceTypes = new([.. Enum.GetValues<DiceFaces>().Where(x => x >= 0)]);
-        SelectedDice = DiceFaces.D4;
-        faceRotations = [d4FaceRotations, d6FaceRotations, d8FaceRotations, d10FaceRotations, d12FaceRotations, d20FaceRotations, d100FaceRotations];
-    }
+
 }
