@@ -1,14 +1,11 @@
-﻿using System.Collections.ObjectModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using HelixToolkit.Wpf;
+using System.Collections.ObjectModel;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
-
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-
-using HelixToolkit.Wpf;
 
 namespace Rayfer.DiceRoller.WPF;
 
@@ -184,6 +181,7 @@ public partial class MainWindowViewModel : ObservableObject
     private ObservableCollection<DiceFaces> diceTypes;
 
     #region Commands
+
     [RelayCommand]
     private void MoveXAngle(MouseWheelEventArgs mouseWheelMovement) => AngleX += Math.Sign(mouseWheelMovement.Delta) * 0.5;
 
@@ -205,9 +203,11 @@ public partial class MainWindowViewModel : ObservableObject
             RollStandard();
         }
     }
-    #endregion
+
+    #endregion Commands
 
     #region Helper Methods
+
     private void RollPercentile()
     {
         RollResult = Random.Shared.Next(0, 100);
@@ -261,7 +261,6 @@ public partial class MainWindowViewModel : ObservableObject
 
         storyBoard.Begin();
     }
-    #endregion
 
-
+    #endregion Helper Methods
 }

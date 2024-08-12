@@ -163,7 +163,7 @@
                                                          Angle="{Binding  D100AngleZ, UpdateSourceTrigger=PropertyChanged}" />
                                 </RotateTransform3D.Rotation>
                             </RotateTransform3D>
-                            <TranslateTransform3D x:Name="TranslateD100" OffsetZ="{Binding D100OffsetX}" OffsetX="{Binding D100OffsetZ}"/>
+                            <TranslateTransform3D x:Name="TranslateD100" OffsetZ="{Binding D100OffsetX}" OffsetX="{Binding D100OffsetZ}" />
                         </Transform3DGroup>
                     </ModelVisual3D.Transform>
                 </ModelVisual3D>
@@ -204,7 +204,7 @@
                 </i:Interaction.Triggers>
             </TextBox>
             <Label Content="Dice:" />
-            
+
             <!-- Button to trigger dice roll -->
             <ComboBox SelectedItem="{Binding SelectedDice}"
                       ItemsSource="{Binding DiceTypes}"
