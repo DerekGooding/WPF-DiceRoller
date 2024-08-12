@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
@@ -14,6 +15,7 @@ namespace Rayfer.DiceRoller.WPF;
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ModelImporter modelImporter;
+
     private readonly Dictionary<DiceFaces, Dictionary<int, double[]>> diceModelFaceRotations;
 
     private readonly string[] diceModels =
@@ -173,54 +175,7 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<DiceFaces> diceTypes;
 
-    [RelayCommand]
-    private void RollDice()
-    {
-        if (SelectedDice is DiceFaces.D100)
-        {
-            RollResult = Random.Shared.Next(0, 100);
-
-            var unitsRolledNumber = RollResult % 10;
-            var d10FaceOrientation = diceModelFaceRotations[DiceFaces.D10][unitsRolledNumber];
-            const int Variability = 10;
-
-            var tensRolledNumber = RollResult / 10;
-            var d100FaceOrientation = diceModelFaceRotations[DiceFaces.D100][tensRolledNumber];
-
-            var diceRollStoryboard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
-            AnimateDice(d10FaceOrientation, Variability, diceRollStoryboard);
-
-            var d100DiceRollStoryboard = (Storyboard)Application.Current.MainWindow.FindResource("D100DiceRollStoryboard");
-            AnimateDice(d100FaceOrientation, Variability, d100DiceRollStoryboard);
-        }
-        else
-        {
-            RollResult = Random.Shared.Next(1, diceFacesNumbers[(int)SelectedDice]);
-
-            var diceFaceOrientation = diceModelFaceRotations[SelectedDice][RollResult];
-            var Variability = SelectedDice == DiceFaces.D6 ? 20 : 10;
-
-            var diceRollStoryboard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
-            AnimateDice(diceFaceOrientation, Variability, diceRollStoryboard);
-        }
-    }
-
-    private static void AnimateDice(double[] faceOrientations, double orientationVariability, Storyboard diceRollStoryboard)
-    {
-        for (int i = 0; i <= 3; i++)
-        {
-            DoubleAnimation rotation = (DoubleAnimation)diceRollStoryboard.Children[i];
-            if (i < 3)
-            {
-                rotation.From = Random.Shared.Next(-720, -360);
-                rotation.To = faceOrientations[i] + ((Random.Shared.NextDouble() - 0.5D) * orientationVariability);
-            }
-            rotation.Duration = new Duration(TimeSpan.FromSeconds(1).Add(TimeSpan.FromSeconds(Random.Shared.NextDouble() * 0.75)));
-        }
-
-        diceRollStoryboard.Begin();
-    }
-
+    #region Commands
     [RelayCommand]
     private void MoveXAngle(MouseWheelEventArgs mouseWheelMovement) => AngleX += Math.Sign(mouseWheelMovement.Delta) * 0.5;
 
@@ -230,19 +185,80 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void MoveZAngle(MouseWheelEventArgs mouseWheelMovement) => AngleZ += Math.Sign(mouseWheelMovement.Delta) * 0.5;
 
+    [RelayCommand]
+    private void RollDice()
+    {
+        if (SelectedDice is DiceFaces.D100)
+        {
+            RollPercentile();
+        }
+        else
+        {
+            RollStandard();
+        }
+    }
+    #endregion
+
+    #region Helper Methods
+    private void RollPercentile()
+    {
+        RollResult = Random.Shared.Next(0, 100);
+        HandleUnitsDie();
+        HandlePercentileDie();
+    }
+
+    private void HandleUnitsDie()
+    {
+        const int Variability = 10;
+        int i = RollResult % 10;
+        double[] orientations = diceModelFaceRotations[DiceFaces.D10][i];
+
+        Storyboard storyboard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
+        AnimateDice(orientations, Variability, storyboard);
+    }
+
+    private void HandlePercentileDie()
+    {
+        const int Variability = 10;
+        int i = RollResult / 10;
+        double[] orientations = diceModelFaceRotations[DiceFaces.D100][i];
+
+        Storyboard storyboard = (Storyboard)Application.Current.MainWindow.FindResource("D100DiceRollStoryboard");
+        AnimateDice(orientations, Variability, storyboard);
+    }
+
+    private void RollStandard()
+    {
+        RollResult = Random.Shared.Next(1, diceFacesNumbers[(int)SelectedDice]);
+
+        double[] orientations = diceModelFaceRotations[SelectedDice][RollResult];
+        int Variability = SelectedDice == DiceFaces.D6 ? 20 : 10;
+
+        Storyboard storyBoard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
+        AnimateDice(orientations, Variability, storyBoard);
+    }
+
+    private static void AnimateDice(double[] orientations, double orientationVariability, Storyboard storyBoard)
+    {
+        for (int i = 0; i <= 3; i++)
+        {
+            DoubleAnimation rotation = (DoubleAnimation)storyBoard.Children[i];
+            if (i < 3)
+            {
+                rotation.From = Random.Shared.Next(-720, -360);
+                rotation.To = orientations[i] + ((Random.Shared.NextDouble() - 0.5D) * orientationVariability);
+            }
+            rotation.Duration = new Duration(TimeSpan.FromSeconds(1).Add(TimeSpan.FromSeconds(Random.Shared.NextDouble() * 0.75)));
+        }
+
+        storyBoard.Begin();
+    }
+    #endregion
+
     public MainWindowViewModel()
     {
         modelImporter = new ModelImporter();
-        diceTypes =
-        [
-            DiceFaces.D4,
-            DiceFaces.D6,
-            DiceFaces.D8,
-            DiceFaces.D10,
-            DiceFaces.D12,
-            DiceFaces.D20,
-            DiceFaces.D100
-        ];
+        diceTypes = new([.. Enum.GetValues<DiceFaces>().Where(x => x >= 0)]);
         SelectedDice = DiceFaces.D4;
         diceModelFaceRotations = new()
         {

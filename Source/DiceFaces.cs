@@ -9,5 +9,5 @@ public enum DiceFaces
     D12,
     D20,
     D100,
-    DCustom
+    //DCustom
 }
