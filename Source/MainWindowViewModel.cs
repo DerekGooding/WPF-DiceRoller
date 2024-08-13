@@ -13,14 +13,20 @@ namespace Rayfer.DiceRoller.WPF;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-    public MainWindowViewModel()
-    {
-        modelImporter = new ModelImporter();
-        diceTypes = new(DiceDatas.Data);
-        SelectedDice = diceTypes[0];
-    }
+    public MainWindowViewModel() => SelectedDice = diceTypes[0];
 
-    private readonly ModelImporter modelImporter;
+    #region Observable Properties
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DiceModel))]
+    [NotifyPropertyChangedFor(nameof(DiceModelD100))]
+    [NotifyPropertyChangedFor(nameof(OffsetX))]
+    [NotifyPropertyChangedFor(nameof(OffsetZ))]
+    [NotifyPropertyChangedFor(nameof(D100OffsetX))]
+    [NotifyPropertyChangedFor(nameof(D100OffsetZ))]
+    private DiceData selectedDice;
+
+    [ObservableProperty]
+    private ObservableCollection<DiceData> diceTypes = new(DiceDatas.Data);
 
     [ObservableProperty]
     private double angleX;
@@ -42,6 +48,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private int rollResult;
+    #endregion
+
+    private readonly ModelImporter modelImporter = new();
 
     public Model3D DiceModel => SelectedDice.IsPercentile
                 ? modelImporter.Load(SelectedDice.AlternativeModelPath)
@@ -55,17 +64,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     public Model3D? DiceModelD100 => SelectedDice.IsPercentile ? (Model3D)modelImporter.Load(SelectedDice.ModelPath) : null;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DiceModel))]
-    [NotifyPropertyChangedFor(nameof(DiceModelD100))]
-    [NotifyPropertyChangedFor(nameof(OffsetX))]
-    [NotifyPropertyChangedFor(nameof(OffsetZ))]
-    [NotifyPropertyChangedFor(nameof(D100OffsetX))]
-    [NotifyPropertyChangedFor(nameof(D100OffsetZ))]
-    private DiceData selectedDice;
+    private Storyboard? _standardStoryboard;
+    public Storyboard StandardStoryboard => _standardStoryboard ??= (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
 
-    [ObservableProperty]
-    private ObservableCollection<DiceData> diceTypes;
+    private Storyboard? _percentileStoryboard;
+    public Storyboard PercentileStoryboard => _percentileStoryboard ??= (Storyboard)Application.Current.MainWindow.FindResource("D100DiceRollStoryboard");
 
     #region Commands
 
@@ -104,22 +107,18 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void HandleUnitsDie()
     {
-        const int Variability = 10;
         int i = RollResult % 10;
         double[] orientations = DiceTypes.First(x=>x.Name == "D10").Rotations[i];
 
-        Storyboard storyboard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
-        AnimateDice(orientations, Variability, storyboard);
+        AnimateDice(orientations, SelectedDice.Variability, StandardStoryboard);
     }
 
     private void HandlePercentileDie()
     {
-        const int Variability = 10;
         int i = RollResult / 10;
         double[] orientations = SelectedDice.Rotations[i];
 
-        Storyboard storyboard = (Storyboard)Application.Current.MainWindow.FindResource("D100DiceRollStoryboard");
-        AnimateDice(orientations, Variability, storyboard);
+        AnimateDice(orientations, SelectedDice.Variability, PercentileStoryboard);
     }
 
     private void RollStandard()
@@ -129,8 +128,7 @@ public partial class MainWindowViewModel : ObservableObject
         double[] orientations = SelectedDice.Rotations[RollResult];
         int Variability = SelectedDice.Variability;
 
-        Storyboard storyBoard = (Storyboard)Application.Current.MainWindow.FindResource("DiceRollStoryboard");
-        AnimateDice(orientations, Variability, storyBoard);
+        AnimateDice(orientations, Variability, StandardStoryboard);
     }
 
     private static void AnimateDice(double[] orientations, double variability, Storyboard storyBoard)
